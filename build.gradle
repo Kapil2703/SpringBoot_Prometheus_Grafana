@@ -1,0 +1,80 @@
+plugins {
+	id 'org.springframework.boot' version '2.1.4.RELEASE'
+	id 'java'
+	id "com.palantir.docker" version '0.22.1'
+	id "com.palantir.docker-compose" version "0.22.1"
+	id 'com.gradle.build-scan' version '2.1' // to scan with https://scans.gradle.com
+}
+
+apply plugin: 'eclipse'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'idea'
+apply plugin: 'com.palantir.docker' 
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+group = 'springio'
+
+bootJar {
+	baseName = 'my-spring-boot'
+	version =  '0.1.0'
+}
+
+repositories {
+	maven {
+		url "https://plugins.gradle.org/m2/"
+	  }
+	mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+
+dependencies {
+	
+	implementation 'org.springframework.boot:spring-boot-starter-web' // THIS IS NEEDED FOR WEB, PSRING MVC
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf' // THIS IS NEEDED FOR TEMPLATE ENGINE, UI
+	implementation 'org.hsqldb:hsqldb'  // THIS IS NEEDED FOR EMBADED DB
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // THIS IS NEEDED FOR DATA ACCESS
+	implementation 'org.springframework.boot:spring-boot-starter-data-rest' // THIS IS NEEDED TO ENABLE RESTFUL DATA SERVICES
+	implementation 'org.springframework.boot:spring-boot-starter-security' // THIS IS NEEDED TO ENABLE SECURITY
+	implementation 'org.springframework.boot:spring-boot-devtools' // This is needed for Template engine 
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5' 
+	//implementation 'com.fasterxml.jackson.module:jackson-module-kotlin' // This is needed for Java to JSON conversion.
+	implementation 'org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure:2.0.5.RELEASE'
+	implementation 'org.webjars:jquery:2.1.4'
+    implementation 'org.webjars:bootstrap:3.3.4'
+	
+	implementation 'gradle.plugin.com.palantir.gradle.docker:gradle-docker:0.22.1'
+	implementation 'org.springframework.boot:spring-boot-gradle-plugin:2.1.6.RELEASE'
+	//implementation 'io.micrometer:micrometer-core:1.1.0' 
+	
+	testImplementation 'org.springframework.boot:spring-boot-starter-test' // THIS IS NEEDED FOR UNIT AND IINTEGRATION TEST.
+	testCompile("junit:junit") //// THIS IS NEEDED FOR JUNIT TEST, OPTION IF FIRST ONE IS THERE
+	testImplementation 'org.springframework.security:spring-security-test' // THIS IS NEEDED TO ENABLE SPRIING SECURITY TEST EXECUTION.
+	
+	implementation 'org.springframework.boot:spring-boot-starter-actuator' // THIS IS NEEDED FOR PRODUCTION HEALTH MONIITORING
+	
+	runtimeOnly 'org.hsqldb:hsqldb'
+	runtimeOnly 'mysql:mysql-connector-java'
+	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+}
+
+
+task unpack(type: Copy) {
+    dependsOn bootJar
+    from(zipTree(tasks.bootJar.outputs.files.singleFile))
+    into("build/dependency")
+}
+
+docker {
+	name "${project.group}/${bootJar.baseName}"
+	copySpec.from(tasks.unpack.outputs).into("dependency")
+	buildArgs(['DEPENDENCY': "dependency"])
+}
+
+dockerCompose {
+	dockerComposeFile 'docker-compose.yml'
+}

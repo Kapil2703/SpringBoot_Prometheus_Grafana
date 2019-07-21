@@ -4,7 +4,7 @@
 
 2. Run docker-compose up 
 
-3. Add your root folder into shared location of docker in case prometheus file does not copy. 
+3. Add your root folder into shared location of docker in case prometheus file does not copy or mount. 
 
 4. Hit URLs : 
 
